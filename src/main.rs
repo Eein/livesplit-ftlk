@@ -1,7 +1,8 @@
 use fltk::{prelude::*, *};
 use livesplit_core::rendering::software::Renderer;
-use livesplit_core::{Run, Segment, Timer, layout::Layout};
+use livesplit_core::{Run, Segment, Timer, SharedTimer, layout::Layout};
 use livesplit_core::layout::editor::Editor;
+use livesplit_hotkey::{Hook, Hotkey, KeyCode, Modifiers};
 
 fn main() {
     // Create a run object that we can use with at least one segment.
@@ -9,13 +10,25 @@ fn main() {
     run.set_game_name("Super Mario Odyssey");
     run.set_category_name("Any%");
     run.push_segment(Segment::new("Cap Kingdom"));
+    run.push_segment(Segment::new("Kingdom"));
+    run.push_segment(Segment::new("Cap"));
+    run.push_segment(Segment::new("Capuing"));
+    run.push_segment(Segment::new("💁👌🎍"));
+    run.push_segment(Segment::new("本語組版処理の ..."));
 
     // Create the timer from the run.
-    let mut timer = Timer::new(run).expect("Run with at least one segment provided");
-    timer.start();
-    let layout = Layout::default_layout();
-    let mut editor = Editor::new(layout).expect("EDITOR");
+    let timer = Timer::new(run).expect("Run with at least one segment provided");
+    let shared_timer = timer.into_shared();
 
+    shared_timer.write().unwrap().start();
+    let layout = Layout::default_layout();
+    let mut editor = Editor::new(layout).expect("Editor RIP");
+
+    let st = shared_timer.clone();
+    let hook = Hook::new().expect("Livesplit Hotkeys RIP");
+    let _ = hook.register(Hotkey { key_code: KeyCode::F12, modifiers: Modifiers::empty() }, move || {
+        st.clone().write().unwrap().split();
+    });
 
     let app = app::App::default();
     let mut wind = window::DoubleWindow::default().with_size(400, 600);
@@ -105,7 +118,7 @@ fn main() {
     let mut renderer = Renderer::new();
 
     app::add_idle3(move |_| {
-        let layout_state = editor.layout_state(&timer.snapshot());
+        let layout_state = editor.layout_state(&shared_timer.clone().read().unwrap().snapshot());
         renderer.render(&layout_state, [wind.w().try_into().unwrap(), wind.h().try_into().unwrap()]);
         let fb = renderer.image_data();
         draw::draw_rgba(&mut frame, fb).unwrap(); 

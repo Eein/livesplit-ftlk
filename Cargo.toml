@@ -1,0 +1,12 @@
+[package]
+name = "livesplit-fltk"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fltk = { version = "^1.4", features = ["fltk-bundled"] }
+livesplit-core = { version = "0.13", features = ["software-rendering"] }
+livesplit-hotkey = { version = "0.7" }
+
+[build-dependencies]
+fl2rust = "0.4"

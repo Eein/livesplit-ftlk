@@ -5,8 +5,15 @@ edition = "2021"
 
 [dependencies]
 fltk = { version = "^1.4", features = ["fltk-bundled"] }
-livesplit-core = { version = "0.13", features = ["software-rendering"] }
+livesplit-core = { git = "https://github.com/LiveSplit/livesplit-core", branch = "master", features = ["software-rendering"] }
 livesplit-hotkey = { version = "0.7" }
 
-[build-dependencies]
-fl2rust = "0.4"
+[profile.dev]
+opt-level = 1
+
+[profile.release]
+lto = true
+panic = "abort"
+codegen-units = 1
+strip = true
+opt-level = 3

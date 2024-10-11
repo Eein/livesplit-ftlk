@@ -1,6 +1,6 @@
-use fltk::{prelude::*, *};
+use fltk::{prelude::*, *, enums::*};
 use livesplit_core::rendering::software::Renderer;
-use livesplit_core::{Run, Segment, Timer, SharedTimer, layout::Layout};
+use livesplit_core::{Run, Segment, Timer, settings::ImageCache, layout::Layout};
 use livesplit_core::layout::editor::Editor;
 use livesplit_hotkey::{Hook, Hotkey, KeyCode, Modifiers};
 
@@ -25,29 +25,114 @@ fn main() {
     let mut editor = Editor::new(layout).expect("Editor RIP");
 
     let st = shared_timer.clone();
+
+
     let hook = Hook::new().expect("Livesplit Hotkeys RIP");
     let _ = hook.register(Hotkey { key_code: KeyCode::F12, modifiers: Modifiers::empty() }, move || {
-        st.clone().write().unwrap().split();
+        st.write().unwrap().split();
+    });
+    let _ = hook.register(Hotkey { key_code: KeyCode::F11, modifiers: Modifiers::empty() }, move || {
+        draw::push_clip(100, 100, 500, 200);
+        draw::draw_box(
+            enums::FrameType::ThinUpBox,
+            100,
+            100,
+            500,
+            200,
+            enums::Color::FrameDefault,
+        );
+        draw::pop_clip();
     });
 
     let app = app::App::default();
+
     let mut wind = window::DoubleWindow::default().with_size(400, 600);
     wind.make_resizable(true);
-
     wind.set_color(enums::Color::Black);
     wind.set_border(false);
+
     wind.handle({
         let mut x = 0;
         let mut y = 0;
         let mut can_resize: bool = false;
         let mut is_on_right_bottom_corner: bool = false;
+        let st = shared_timer.clone();
 
         move |w, ev| match ev {
             enums::Event::Push => {
-                let coords = app::event_coords();
-                x = coords.0;
-                y = coords.1;
-                can_resize = is_on_right_bottom_corner;
+                match app::event_mouse_button() {
+                    app::MouseButton::Right => {
+                        let coords = app::event_coords();
+                        let menu = menu::MenuButton::default();
+                        menu.clone().with_pos(coords.0, coords.1);
+                        menu.clone().add("Edit Splits...", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("Open Splits/From File...", Shortcut::None, menu::MenuFlag::Normal, |_|{}); 
+                        menu.clone().add("Open Splits/From URL...", Shortcut::None, menu::MenuFlag::Normal, |_|{}); 
+                        menu.clone().add("_Open Splits/From Speedrun.com...", Shortcut::None, menu::MenuFlag::Normal, |_|{}); 
+                        menu.clone().add("_Open Splits/Edit History...", Shortcut::None, menu::MenuFlag::Normal, |_|{}); 
+                        menu.clone().add("Save Splits", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("Save Splits As...", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("_Close Splits", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("Control/Start", Shortcut::None, menu::MenuFlag::Normal, {
+                        let st = st.clone();
+                        move |_|{ 
+                            st.write().unwrap().start();
+                        }});
+                        menu.clone().add("Control/Reset", Shortcut::None, menu::MenuFlag::Normal, {
+                        let st = st.clone();
+                        move |_|{ 
+                            st.write().unwrap().reset(true);
+                        }});
+                        menu.clone().add("Control/Undo Split", Shortcut::None, menu::MenuFlag::Normal, {
+                        let st = st.clone();
+                        move |_|{ 
+                            st.write().unwrap().undo_split();
+                        }});
+                        menu.clone().add("Control/Skip Split", Shortcut::None, menu::MenuFlag::Normal, {
+                        let st = st.clone();
+                        move |_|{ 
+                            st.write().unwrap().skip_split();
+                        }});
+                        menu.clone().add("Control/Pause", Shortcut::None, menu::MenuFlag::Normal, {
+                        let st = st.clone();
+                        move |_|{ 
+                            st.write().unwrap().pause();
+                        }});
+                        menu.clone().add("Control/Undo All Pauses", Shortcut::None, menu::MenuFlag::Normal, {
+                        let st = st.clone();
+                        move |_|{ 
+                            st.write().unwrap().undo_all_pauses();
+                        }});
+                        menu.clone().add("Control/Global Hotkeys", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("Compare Against/_Personal Best", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("Compare Against/Best Segments", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("Compare Against/_Average Segments", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("Compare Against/Real Time", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("_Compare Against/Game Time", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("Share...", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("racetime.gg Races/New Race...", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("_SRL Races/New Race...", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("Edit Layout...", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("Open Layout/From File...", Shortcut::None, menu::MenuFlag::Normal, |_|{}); 
+                        menu.clone().add("Open Layout/From URL...", Shortcut::None, menu::MenuFlag::Normal, |_|{}); 
+                        menu.clone().add("Open Layout/_Default", Shortcut::None, menu::MenuFlag::Normal, |_|{}); 
+                        menu.clone().add("Open Layout/Edit History", Shortcut::None, menu::MenuFlag::Normal, |_|{}); 
+                        menu.clone().add("Save Layout", Shortcut::None, menu::MenuFlag::Normal, |_|{}); 
+                        menu.clone().add("_Save Layout As...", Shortcut::None, menu::MenuFlag::Normal, |_|{}); 
+                        menu.clone().add("_Settings", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("About", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+                        menu.clone().add("Exit", Shortcut::None, menu::MenuFlag::Normal, |_|{});
+
+                        menu.popup();
+                    },
+                    app::MouseButton::Left => {
+                        let coords = app::event_coords();
+                        x = coords.0;
+                        y = coords.1;
+                        can_resize = is_on_right_bottom_corner;
+                    },
+                    _ => ()
+                }
                 true
             }
             enums::Event::Released => {
@@ -94,36 +179,23 @@ fn main() {
         }
     });
 
-
-    wind.draw(|w| {
-    // draw::draw_box(enums::FrameType::FlatBox, 0, 0, 100, 100, enums::Color::White);
-        let x = w.width() - 10;
-        let y = w.height() - 10;
-        let w = 10;
-        let h = 10;
-        draw::push_clip(x, y, w, h);
-        // draw::draw_rectf(x, y, w, h);
-        draw::set_draw_color(enums::Color::White);
-        // draw::draw_rect(x, y, w, h);
-        draw::pop_clip();
-
-    });
     let mut frame = frame::Frame::default_fill();
-
 
     wind.end();
     wind.show();
     wind.set_on_top();
 
-    let mut renderer = Renderer::new();
+
+    let mut renderer = Renderer::default();
+    let mut image_cache = ImageCache::new();
 
     app::add_idle3(move |_| {
-        let layout_state = editor.layout_state(&shared_timer.clone().read().unwrap().snapshot());
-        renderer.render(&layout_state, [wind.w().try_into().unwrap(), wind.h().try_into().unwrap()]);
+        let layout_state = editor.layout_state(&mut image_cache, &shared_timer.clone().read().unwrap().snapshot());
+        renderer.render(&layout_state, &image_cache, [wind.w().try_into().unwrap(), wind.h().try_into().unwrap()]);
         let fb = renderer.image_data();
         draw::draw_rgba(&mut frame, fb).unwrap(); 
         wind.redraw();
-        app::sleep(0.016);
+        app::sleep(0.008);
     });
 
     app.run().unwrap();

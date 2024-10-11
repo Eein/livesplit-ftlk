@@ -15,45 +15,28 @@
           inherit system overlays;
         };
         libPath = with pkgs; lib.makeLibraryPath [
-          xorg.libXinerama
-          xorg.libXcursor
-          xorg.libXfixes
-          # libGL
-          # libxkbcommon
-          # wayland
-          xorg.libX11
-          xorg.libXext
-          xorg.libXft
-          fontconfig
-          pango
-          cairo
-          # pangocairo
-          # xorg.libXrandr
         ];
       in
       {
         devShells.default = with pkgs; mkShell {
           buildInputs = [
+            libGL
+            libGLU
+            glew
+            cmake
             xorg.libXinerama
             xorg.libXcursor
             xorg.libXfixes
-            xorg.libX11
-            xorg.libXext
-            xorg.libXft
+            libxkbcommon
             fontconfig
             pango
             cairo
-            fltk14
-            # xorg.libxcb
-            # linuxPackages_latest.perf
-            # wasm-pack
-            # cargo-flamegraph
+            dbus
+            wayland
             pkg-config
             rust-analyzer
             rustfmt
-            # wasm-bindgen-cli
             (rust-bin.nightly.latest.default.override {
-              # targets = [ "wasm32-unknown-unknown" ];
               extensions = ["rust-analyzer"];
             })
           ];

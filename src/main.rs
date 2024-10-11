@@ -46,7 +46,7 @@ fn main() {
 
     let app = app::App::default();
 
-    let mut wind = window::DoubleWindow::default().with_size(400, 600);
+    let mut wind = window::Window::default().with_size(400, 600);
     wind.make_resizable(true);
     wind.set_color(enums::Color::Black);
     wind.set_border(false);
@@ -194,8 +194,8 @@ fn main() {
         renderer.render(&layout_state, &image_cache, [wind.w().try_into().unwrap(), wind.h().try_into().unwrap()]);
         let fb = renderer.image_data();
         draw::draw_rgba(&mut frame, fb).unwrap(); 
-        wind.redraw();
-        app::sleep(0.008);
+        frame.redraw();
+        app::sleep(0.016);
     });
 
     app.run().unwrap();

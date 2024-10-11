@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-fltk = { version = "^1.4", features = ["fltk-bundled"] }
+fltk = { version = "^1.4", features = ["use-wayland", "enable-glwindow"] }
 livesplit-core = { git = "https://github.com/LiveSplit/livesplit-core", branch = "master", features = ["software-rendering"] }
 livesplit-hotkey = { version = "0.7" }
 
